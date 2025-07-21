@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using VRCFaceTracking.Activation;
+using VRCFaceTracking.Avalonia.Services;
 using VRCFaceTracking.Avalonia.ViewModels;
 using VRCFaceTracking.Avalonia.ViewModels.SplitViewPane;
 using VRCFaceTracking.Avalonia.Views;
@@ -101,6 +102,8 @@ public partial class App : Application
                 services.AddSingleton<UnifiedTracking>();
                 services.AddTransient<GithubService>();
                 services.AddSingleton<IMainService, MainStandalone>();
+
+                services.AddSingleton<DropOverlayService>();
 
                 services.AddSingleton<MainViewModel>();
                 services.AddSingleton<MainWindow>();

@@ -397,4 +397,13 @@
   <data name="YourRating.Text" xml:space="preserve">
     <value>Your rating</value>
   </data>
+  <data name="InstallButton.Text.Install" xml:space="preserve">
+    <value>Install</value>
+  </data>
+  <data name="InstallButton.Text.Uninstall" xml:space="preserve">
+    <value>Uninstall</value>
+  </data>
+  <data name="InstallButton.Text.AwaitingRestart" xml:space="preserve">
+    <value>Awaiting Restart</value>
+  </data>
 </root>

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <LangVersion>latest</LangVersion>
@@ -40,6 +40,33 @@
       <Folder Include="Activation\" />
     </ItemGroup>
 
+    <ItemGroup>
+        <Compile Update="Assets\Resources.Designer.cs">
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+            <DependentUpon>Resources.resx</DependentUpon>
+        </Compile>
+        <Compile Update="Assets\Resources.es.Designer.cs">
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+            <DependentUpon>Resources.es.resx</DependentUpon>
+        </Compile>
+        <Compile Update="Assets\Resources.ja.Designer.cs">
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+            <DependentUpon>Resources.ja.resx</DependentUpon>
+        </Compile>
+        <Compile Update="Assets\Resources.pl.Designer.cs">
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+            <DependentUpon>Resources.pl.resx</DependentUpon>
+        </Compile>
+        <Compile Update="Assets\Resources.zh-cn.Designer.cs">
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+            <DependentUpon>Resources.zh-cn.resx</DependentUpon>
+        </Compile>
+    </ItemGroup>
 
     <ItemGroup>
         <!--HACK: the resource paths are broken for some reason, put them in the correct spot-->
@@ -71,33 +98,6 @@
     </ItemGroup>
 
 
-    <ItemGroup>
-        <Compile Update="Assets\Resources.Designer.cs">
-            <DesignTime>True</DesignTime>
-            <AutoGen>True</AutoGen>
-            <DependentUpon>Resources.resx</DependentUpon>
-        </Compile>
-        <Compile Update="Assets\Resources.es.Designer.cs">
-            <DesignTime>True</DesignTime>
-            <AutoGen>True</AutoGen>
-            <DependentUpon>Resources.es.resx</DependentUpon>
-        </Compile>
-        <Compile Update="Assets\Resources.ja.Designer.cs">
-            <DesignTime>True</DesignTime>
-            <AutoGen>True</AutoGen>
-            <DependentUpon>Resources.ja.resx</DependentUpon>
-        </Compile>
-        <Compile Update="Assets\Resources.pl.Designer.cs">
-            <DesignTime>True</DesignTime>
-            <AutoGen>True</AutoGen>
-            <DependentUpon>Resources.pl.resx</DependentUpon>
-        </Compile>
-        <Compile Update="Assets\Resources.zh-cn.Designer.cs">
-            <DesignTime>True</DesignTime>
-            <AutoGen>True</AutoGen>
-            <DependentUpon>Resources.zh-cn.resx</DependentUpon>
-        </Compile>
-    </ItemGroup>
 
     <ItemGroup>
       <None Update="LocalSettings.json">

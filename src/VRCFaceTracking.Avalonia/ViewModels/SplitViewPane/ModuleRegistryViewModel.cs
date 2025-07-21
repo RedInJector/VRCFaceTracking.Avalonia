@@ -1,13 +1,19 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.DependencyInjection;
+using CommunityToolkit.Mvvm.Input;
+using VRCFaceTracking.Avalonia.Assets;
+using VRCFaceTracking.Avalonia.Services;
 using VRCFaceTracking.Avalonia.Views;
 using VRCFaceTracking.Core.Contracts.Services;
 using VRCFaceTracking.Core.Models;
@@ -17,69 +23,22 @@ namespace VRCFaceTracking.Avalonia.ViewModels.SplitViewPane;
 
 public partial class ModuleRegistryViewModel : ViewModelBase
 {
-    [ObservableProperty] private InstallableTrackingModule _module;
-
-    [ObservableProperty] private string _searchText;
-
-    [ObservableProperty] private bool _noRemoteModulesDetected;
-
-    [ObservableProperty] private bool _modulesDetected;
-    [ObservableProperty] private int _moduleRating;
-    public ObservableCollection<InstallableTrackingModule> FilteredModuleInfos { get; } = [];
-    public ObservableCollection<InstallableTrackingModule> InstalledModules { get; set; } = [];
-
     private InstallableTrackingModule[] _registryInfos;
-    private ModuleRegistryView _moduleRegistryView { get; }
     private IModuleDataService _moduleDataService { get; }
     private ModuleInstaller _moduleInstaller { get; }
     private ILibManager _libManager { get; }
-
     private SemaphoreSlim _moduleRatingLock = new(1);
-
-    private bool _requestReinit;
-    public bool RequestReinit
-    {
-        get => _requestReinit;
-        set
-        {
-            if (_requestReinit != value)
-            {
-                _requestReinit = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public int CorrectedModuleCount => Math.Max(0, InstalledModules.Count - 1);
-
-    private void RequestReinitialize()
-    {
-        RequestReinit = true;
-    }
-
-    public void ModuleTryReinitialize()
-    {
-        if (RequestReinit)
-        {
-            RequestReinit = false;
-            var installedModules = InstalledModules.ToList();
-            _moduleDataService.SaveInstalledModulesDataAsync(installedModules);
-            _libManager.TeardownAllAndResetAsync();
-            _libManager.Initialize();
-        }
-    }
 
     public ModuleRegistryViewModel()
     {
-        _moduleRegistryView = Ioc.Default.GetService<ModuleRegistryView>()!;
         _moduleDataService = Ioc.Default.GetService<IModuleDataService>()!;
         _moduleInstaller = Ioc.Default.GetService<ModuleInstaller>()!;
         _libManager = Ioc.Default.GetService<ILibManager>()!;
-        ModuleRegistryView.ModuleSelected += ModuleSelected;
-        ModuleRegistryView.LocalModuleInstalled += LocalModuleInstalled;
-        ModuleRegistryView.RemoteModuleInstalled += RemoteModuleInstalled;
 
-        _registryInfos = _moduleRegistryView.GetRemoteModules();
+        ModuleRegistryView.LocalModuleInstalled += LocalModuleInstalled;
+        //ModuleRegistryView.RemoteModuleInstalled += RemoteModuleInstalled;
+
+        _registryInfos = GetRemoteModules();
 
         ResetInstalledModulesList(suppressReinit: true);
 
@@ -93,6 +52,160 @@ public partial class ModuleRegistryViewModel : ViewModelBase
         foreach (var module in _registryInfos)
         {
             FilteredModuleInfos.Add(module);
+        }
+        SelectedInstalledModule = InstalledModules.First();
+        SelectedInfoModule = InstalledModules.First();
+    }
+
+    [NotifyPropertyChangedFor(nameof(InstallButtonText))]
+    [NotifyPropertyChangedFor(nameof(InstallButtonActive))]
+    [ObservableProperty] private InstallableTrackingModule _module;
+    [ObservableProperty] private InstallableTrackingModule _selectedInstalledModule;
+    [ObservableProperty] private InstallableTrackingModule _selectedInfoModule;
+    [ObservableProperty] private bool _requestReinit;
+    [ObservableProperty] private string _searchText;
+    [ObservableProperty] private bool _noRemoteModulesDetected;
+    [ObservableProperty] private bool _modulesDetected;
+    [ObservableProperty] private int _moduleRating;
+    [ObservableProperty] private bool _dragItemDetected;
+    [ObservableProperty] private int _selectedTabIndex;
+    public ObservableCollection<InstallableTrackingModule> FilteredModuleInfos { get; } = [];
+    public ObservableCollection<InstallableTrackingModule> InstalledModules { get; set; } = [];
+
+    public string InstallButtonText
+    {
+        get
+        {
+            if (Module == null)
+                return Resources.InstallButton_Text_Install;
+
+            return Module.InstallationState switch
+            {
+                InstallState.NotInstalled or InstallState.Outdated => Resources.InstallButton_Text_Install,
+                InstallState.Installed => Resources.InstallButton_Text_Uninstall,
+                InstallState.AwaitingRestart => Resources.InstallButton_Text_AwaitingRestart,
+                _ => Resources.InstallButton_Text_Install,
+            };
+        }
+    }
+    public bool InstallButtonActive
+    {
+        get
+        {
+            if(Module == null)
+                return false;
+            if (Module.InstallationState == InstallState.AwaitingRestart)
+                return false;
+
+            return true;
+        }
+    }
+
+    partial void OnSelectedTabIndexChanged(int oldValue, int newValue)
+    {
+        if (newValue == 0) 
+            Module = SelectedInfoModule;
+        if (newValue == 1)
+            Module = SelectedInstalledModule;
+    }
+    partial void OnSelectedInfoModuleChanged(InstallableTrackingModule value)
+    {
+        if(SelectedTabIndex == 0)
+            Module = value;
+    }
+    partial void OnSelectedInstalledModuleChanged(InstallableTrackingModule value)
+    {
+        if(SelectedTabIndex == 1)
+            Module = value;
+    }
+    public InstallableTrackingModule[] GetRemoteModules()
+    {
+        IEnumerable<InstallableTrackingModule> remoteModules = [];
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        try
+        {
+            Task.Run((Func<Task>)(async () =>
+            {
+                remoteModules = await this._moduleDataService.GetRemoteModules()
+                    .ConfigureAwait(false);
+            }), cts.Token).Wait(cts.Token);
+        }
+        catch (AggregateException ex) when (ex.InnerException is TaskCanceledException)
+        {
+            return null;
+        }
+
+        // Now comes the tricky bit, we get all locally installed modules and add them to the list.
+        // If any of the IDs match a remote module and the other data contained within does not match,
+        // then we need to set the local module install state to outdated. If everything matches then we need to set the install state to installed.
+        var installedModules = _moduleDataService.GetInstalledModules();
+
+        var localModules = new List<InstallableTrackingModule>();    // dw about it
+        foreach (var installedModule in installedModules)
+        {
+            installedModule.InstallationState = InstallState.Installed;
+            var remoteModule = remoteModules.FirstOrDefault(x => x.ModuleId == installedModule.ModuleId);
+            if (remoteModule == null)   // If this module is completely missing from the remote list, then we need to add it to the list.
+            {
+                // This module is installed but not in the remote list, so we need to add it to the list.
+                localModules.Add(installedModule);
+            }
+            else
+            {
+                // This module is installed and in the remote list, so we need to update the remote module's install state.
+                remoteModule.InstallationState = remoteModule.Version != installedModule.Version ? InstallState.Outdated : InstallState.Installed;
+            }
+        }
+
+        var remoteCount = remoteModules.Count();
+
+        // Sort our data by name, then place dfg at the top of the list :3
+        remoteModules = remoteModules.OrderByDescending(x => x.AuthorName == "dfgHiatus")
+                                     .ThenBy(x => x.ModuleName);
+
+        var modules = remoteModules.ToArray();
+        var first = modules.First();
+
+        return modules;
+    }
+
+    partial void OnModuleChanged(InstallableTrackingModule oldValue, InstallableTrackingModule newValue)
+    {
+        if (oldValue != null)
+            oldValue.PropertyChanged -= OnModulePropertyChanged;
+
+        if (newValue != null)
+        {
+            newValue.PropertyChanged += OnModulePropertyChanged;
+        }
+    }
+
+    private void OnModulePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(InstallableTrackingModule.InstallationState))
+        {
+            OnPropertyChanged(nameof(InstallButtonText));
+            OnPropertyChanged(nameof(InstallButtonActive));
+        }
+    }
+
+    public int CorrectedModuleCount => Math.Max(0, InstalledModules.Count - 1);
+
+    private void RequestReinitialize()
+    {
+        RequestReinit = true;
+    }
+
+    [RelayCommand]
+    public void ModuleTryReinitialize()
+    {
+        if (RequestReinit)
+        {
+            RequestReinit = false;
+            var installedModules = InstalledModules.ToList();
+            _moduleDataService.SaveInstalledModulesDataAsync(installedModules);
+            _libManager.TeardownAllAndResetAsync();
+            _libManager.Initialize();
         }
     }
 
@@ -131,21 +244,21 @@ public partial class ModuleRegistryViewModel : ViewModelBase
         }
     }
 
-    private void ModuleSelected(InstallableTrackingModule module)
+    partial void OnModuleChanged(InstallableTrackingModule value)
     {
+        if (value == null)
+            return;
 
-        Dispatcher.UIThread.Post(async () =>
+        Dispatcher.UIThread.Post((Action)(async () =>
         {
-            Module = module;
-
             // Local modules don't have ratings 
-            if (Module.Local)
+            if (value.Local)
             {
                 ModuleRating = 0;
                 return;
             }
 
-            var myRating = await _moduleDataService.GetMyRatingAsync(module);
+            var myRating = await this._moduleDataService.GetMyRatingAsync(value);
 
             // We use a lock here because without it a race condition occurres
             // when adding propertyChanged handlers.
@@ -156,7 +269,7 @@ public partial class ModuleRegistryViewModel : ViewModelBase
             {
                 // Check if the selected module is still the same one that we called
                 // GetMyRatingAsync for.
-                if (Module.ModuleId != module.ModuleId)
+                if (Module?.ModuleId != value.ModuleId)
                     return;
 
                 // Prevent events from firing
@@ -173,12 +286,12 @@ public partial class ModuleRegistryViewModel : ViewModelBase
             {
                 _moduleRatingLock.Release();
             }
-        });
+        }));
     }
 
     private void LocalModuleInstalled()
     {
-        _registryInfos = _moduleRegistryView.GetRemoteModules();
+        _registryInfos = GetRemoteModules();
 
         ResetInstalledModulesList();
 
@@ -199,8 +312,8 @@ public partial class ModuleRegistryViewModel : ViewModelBase
 
         try
         {
-            var _installedModules = InstalledModules.ToList(); // Create a copy to avoid modification during save
-            await _moduleDataService.SaveInstalledModulesDataAsync(_installedModules);
+            var installedModules = InstalledModules.ToList(); // Create a copy to avoid modification during save
+            await _moduleDataService.SaveInstalledModulesDataAsync(installedModules);
             RequestReinitialize();
         }
         finally
@@ -210,9 +323,10 @@ public partial class ModuleRegistryViewModel : ViewModelBase
         }
     }
 
-    public async void RemoteModuleInstalled(InstallableTrackingModule module)
+    [RelayCommand]
+    public async Task RemoteModuleInstalledAsync(InstallableTrackingModule module)
     {
-        switch (module.InstallationState)
+        switch (Module.InstallationState)
         {
             case InstallState.NotInstalled or InstallState.Outdated:
             {
@@ -220,7 +334,8 @@ public partial class ModuleRegistryViewModel : ViewModelBase
                 if (!string.IsNullOrEmpty(path))
                 {
                     module!.InstallationState = InstallState.Installed;
-                    await _moduleDataService.IncrementDownloadsAsync(module);
+                    // TODO: Uncomment
+                    //await _moduleDataService.IncrementDownloadsAsync(module);
                     module!.Downloads++;
                 }
                 break;
@@ -297,9 +412,44 @@ public partial class ModuleRegistryViewModel : ViewModelBase
 
     public void DetachedFromVisualTree()
     {
-        ModuleRegistryView.ModuleSelected -= ModuleSelected;
         _moduleDataService.SaveInstalledModulesDataAsync(InstalledModules);
 
         ModuleTryReinitialize();
+    }
+
+    public async Task<bool> InstallModule(IStorageItem file)
+    {
+        string path = string.Empty;
+        try
+        {
+            path = await _moduleInstaller.InstallLocalModule(file.Path.AbsolutePath);
+            return !string.IsNullOrEmpty(path);
+        }
+        catch (Exception ex) {
+            return false;
+        }
+    }
+
+    [RelayCommand]
+    public void InstallModule(InstallableTrackingModule module)
+    {
+
+    }
+
+    [RelayCommand]
+    public void BrowseLocal()
+    {
+
+    }
+
+    [RelayCommand]
+    public void ReinitializeModules()
+    {
+
+    }
+    [RelayCommand]
+    public void SelectModule()
+    {
+
     }
 }
