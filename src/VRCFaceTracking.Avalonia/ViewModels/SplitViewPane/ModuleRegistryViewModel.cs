@@ -430,6 +430,22 @@ public partial class ModuleRegistryViewModel : ViewModelBase
         }
     }
 
+    // A workaround for changing order without modifying the InstallableTrackingModule.cs
+    [RelayCommand]
+    public void DecrementOrder(InstallableTrackingModule module)
+    {
+        if (module != null) {
+            module.Order--;
+        }
+    }
+    [RelayCommand]
+    public void IncrementOrder(InstallableTrackingModule module)
+    {
+        if (module != null) {
+            module.Order++;
+        }
+    }
+
     [RelayCommand]
     public void InstallModule(InstallableTrackingModule module)
     {

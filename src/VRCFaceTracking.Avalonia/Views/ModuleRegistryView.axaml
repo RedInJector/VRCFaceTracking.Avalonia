@@ -194,13 +194,16 @@
                                     Margin="3,0"
                                     Orientation="Horizontal"
                                     Spacing="2">
+                                  <!--  A workaround for changing order without modifying the InstallableTrackingModule.cs -->
                                   <Button
-                                      Command="{Binding DecrementOrderCommand}"
+                                      Command="{Binding #LocalModuleList.((vm:ModuleRegistryViewModel)DataContext).DecrementOrderCommand}"
+                                      CommandParameter="{Binding}"
                                       Content="↑"
                                       Name="LocalModuleUpButton"
                                       Padding="3" />
                                   <Button
-                                      Command="{Binding IncrementOrderCommand}"
+                                      Command="{Binding #LocalModuleList.((vm:ModuleRegistryViewModel)DataContext).IncrementOrderCommand}"
+                                      CommandParameter="{Binding}"
                                       Content="↓"
                                       Name="LocalModuleDownButton"
                                       Padding="3" />
