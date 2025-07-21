@@ -394,16 +394,4 @@
   <data name="Shell_TrackingSettings.Content" xml:space="preserve">
     <value>Tracking Settings</value>
   </data>
-  <data name="YourRating.Text" xml:space="preserve">
-    <value />
-  </data>
-  <data name="InstallButton.Text.Install" xml:space="preserve">
-    <value />
-  </data>
-  <data name="InstallButton.Text.Uninstall" xml:space="preserve">
-    <value />
-  </data>
-  <data name="InstallButton.Text.AwaitingRestart" xml:space="preserve">
-    <value />
-  </data>
 </root>

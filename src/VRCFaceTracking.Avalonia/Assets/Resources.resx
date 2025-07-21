@@ -406,4 +406,7 @@
   <data name="InstallButton.Text.AwaitingRestart" xml:space="preserve">
     <value>Awaiting Restart</value>
   </data>
+  <data name="Balls" xml:space="preserve">
+    <value>Balls</value>
+  </data>
 </root>

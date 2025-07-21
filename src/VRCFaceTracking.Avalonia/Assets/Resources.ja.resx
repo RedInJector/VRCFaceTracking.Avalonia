@@ -320,22 +320,4 @@
   <data name="AutoStartSettings.Description" xml:space="preserve">
     <value>SteamVRの起動時に自動で起動します</value>
   </data>
-  <data name="CalibrationEnabledToggle.Description" xml:space="preserve">
-    <value />
-  </data>
-  <data name="CalibrateButton.Content" xml:space="preserve">
-    <value />
-  </data>
-  <data name="YourRating.Text" xml:space="preserve">
-    <value />
-  </data>
-  <data name="InstallButton.Text.Install" xml:space="preserve">
-    <value />
-  </data>
-  <data name="InstallButton.Text.Uninstall" xml:space="preserve">
-    <value />
-  </data>
-  <data name="InstallButton.Text.AwaitingRestart" xml:space="preserve">
-    <value />
-  </data>
 </root>
