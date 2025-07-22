@@ -403,4 +403,19 @@
   <data name="DragNDrop.ReleaseFiles" xml:space="preserve">
     <value>Release to add modules to VRCFaceTracking</value>
   </data>
+  <data name="YourRating.Text" xml:space="preserve">
+    <value>Your rating</value>
+  </data>
+  <data name="InstallButton.Text.Install" xml:space="preserve">
+    <value>Install</value>
+  </data>
+  <data name="InstallButton.Text.Uninstall" xml:space="preserve">
+    <value>Uninstall</value>
+  </data>
+  <data name="InstallButton.Text.AwaitingRestart" xml:space="preserve">
+    <value>Awaiting Restart</value>
+  </data>
+  <data name="Balls" xml:space="preserve">
+    <value>Balls</value>
+  </data>
 </root>

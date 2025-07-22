@@ -47,7 +47,7 @@
         <StackPanel Spacing="12">
           <controls:ContentExample>
             <StackPanel Orientation="Horizontal" Spacing="12">
-              <Button x:Name="BrowseLocal">
+              <Button x:Name="BrowseLocal" Command="{Binding BrowseLocalCommand}">
                 <Button.Content>
                   <StackPanel Orientation="Vertical">
                     <PathIcon Data="{StaticResource AddRegular}" Height="24" />
@@ -73,7 +73,7 @@
                     Text="Module data has been changed."
                     VerticalAlignment="Center" />
                 <Button
-                    Click="ReinitButton_Click"
+                    Command="{Binding ModuleTryReinitializeCommand}"
                     Content="Reload Modules"
                     VerticalAlignment="Center" />
               </StackPanel>
@@ -89,7 +89,8 @@
                 <Grid Grid.Column="0" HorizontalAlignment="Left">
                   <TabControl HorizontalAlignment="Center"
                               x:Name="TabControl"
-                              SelectionChanged="ModuleSelectionTabChanged">
+                              SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"
+                             >
                     <TabItem
                         FontWeight="SemiBold"
                         Header="Registry"
@@ -104,9 +105,9 @@
 
                         <ListBox
                             ItemsSource="{Binding FilteredModuleInfos}"
-                            MaxHeight="305"
+                            SelectedItem="{Binding SelectedInfoModule, Mode=TwoWay}"
                             SelectionMode="AlwaysSelected"
-                            SelectionChanged="OnModuleSelected"
+                            MaxHeight="305"
                             Width="350"
                             x:Name="ModuleList">
                           <ListBox.ItemTemplate>
@@ -136,9 +137,10 @@
                       <StackPanel IsVisible="{Binding ModulesDetected}" Margin="6,8,0,0">
                         <ListBox
                             Classes="draggable"
-                            ItemsSource="{Binding InstalledModules}"
                             MaxHeight="400"
-                            SelectionChanged="OnModuleSelected"
+                            SelectionMode="AlwaysSelected"
+                            ItemsSource="{Binding InstalledModules}"
+                            SelectedItem="{Binding SelectedInstalledModule, Mode=TwoWay}"
                             Width="350"
                             x:Name="LocalModuleList">
                           <ListBox.ItemTemplate>
@@ -192,13 +194,16 @@
                                     Margin="3,0"
                                     Orientation="Horizontal"
                                     Spacing="2">
+                                  <!--  A workaround for changing order without modifying the InstallableTrackingModule.cs -->
                                   <Button
-                                      Click="DecrementOrder"
+                                      Command="{Binding #LocalModuleList.((vm:ModuleRegistryViewModel)DataContext).DecrementOrderCommand}"
+                                      CommandParameter="{Binding}"
                                       Content="↑"
                                       Name="LocalModuleUpButton"
                                       Padding="3" />
                                   <Button
-                                      Click="IncrementOrder"
+                                      Command="{Binding #LocalModuleList.((vm:ModuleRegistryViewModel)DataContext).IncrementOrderCommand}"
+                                      CommandParameter="{Binding}"
                                       Content="↓"
                                       Name="LocalModuleDownButton"
                                       Padding="3" />
@@ -241,10 +246,13 @@
 
                           <StackPanel Orientation="Horizontal" Spacing="8">
                             <Button
-                                Click="InstallButton_Click"
+                                IsEnabled="{Binding InstallButtonActive}"
+                                Content="{Binding InstallButtonText}"
+                                Command="{Binding RemoteModuleInstalledCommand}"
+                                CommandParameter="{Binding Module}"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
-                                x:Name="InstallButton">
+                                >
                               Install
                             </Button>
                           </StackPanel>
@@ -349,7 +357,8 @@
                           <LineBreak />
                           <htControls:Hyperlink
                               Alias="{Binding Module.ModulePageUrl}"
-                              Command="{Binding OpenModuleUrl}"
+                              Command="{Binding OpenUrlCommand}"
+                              CommandParameter="{Binding Module.ModulePageUrl}"
                               Url="{Binding Module.ModulePageUrl}" />
                         </TextBlock>
 

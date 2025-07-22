@@ -153,6 +153,15 @@ namespace VRCFaceTracking.Avalonia.Assets {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Balls.
+        /// </summary>
+        public static string Balls {
+            get {
+                return ResourceManager.GetString("Balls", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to File a bug report.
         /// </summary>
         public static string BugRequestCard_Header {
@@ -395,6 +404,33 @@ namespace VRCFaceTracking.Avalonia.Assets {
         public static string HardwareDebug_Header {
             get {
                 return ResourceManager.GetString("HardwareDebug.Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Awaiting Restart.
+        /// </summary>
+        public static string InstallButton_Text_AwaitingRestart {
+            get {
+                return ResourceManager.GetString("InstallButton.Text.AwaitingRestart", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Install.
+        /// </summary>
+        public static string InstallButton_Text_Install {
+            get {
+                return ResourceManager.GetString("InstallButton.Text.Install", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Uninstall.
+        /// </summary>
+        public static string InstallButton_Text_Uninstall {
+            get {
+                return ResourceManager.GetString("InstallButton.Text.Uninstall", resourceCulture);
             }
         }
         
