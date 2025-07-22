@@ -136,5 +136,11 @@ public partial class ModuleRegistryView : UserControl
         }
     }
 
+    private void ClearSearchBox_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is ViewModels.SplitViewPane.ModuleRegistryViewModel vm)
+            vm.SearchText = string.Empty;
+    }
+
 }
 
