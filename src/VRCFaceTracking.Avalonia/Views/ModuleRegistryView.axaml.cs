@@ -27,7 +27,6 @@ namespace VRCFaceTracking.Avalonia.Views;
 
 public partial class ModuleRegistryView : UserControl
 {
-    public static event Action<InstallableTrackingModule>? ModuleSelected;
     public static event Action? LocalModuleInstalled;
     private ModuleInstaller ModuleInstaller { get; }
     private ILibManager LibManager { get; set; }
@@ -48,6 +47,7 @@ public partial class ModuleRegistryView : UserControl
         LibManager = Ioc.Default.GetService<ILibManager>()!;
         _dropOverlayService = Ioc.Default.GetService<DropOverlayService>()!;
 
+        // this should be moved to the ViewModel i think
         this.Get<Button>("BrowseLocal")!.Click += async delegate
         {
             var topLevel = TopLevel.GetTopLevel(this)!;
@@ -96,90 +96,6 @@ public partial class ModuleRegistryView : UserControl
         _dropOverlayService.Hide();
     }
 
-    //private void InstallButton_Click(object? sender, RoutedEventArgs e)
-    //{
-    //    if (ModuleList.ItemCount == 0) return;
-    //    var index = ModuleList.SelectedIndex;
-    //    if (index == -1) index = 0;
-    //    if (ModuleList.Items[index] is not InstallableTrackingModule module) return;
-
-    //    InstallButton.Content = "Please Restart VRCFT";
-    //    InstallButton.IsEnabled = false;
-    //    OnModuleSelected(ModuleList, null);
-    //}
-
-    //private void ModuleSelectionTabChanged(object? sender, SelectionChangedEventArgs e)
-    //{
-    //    if (sender is not TabControl tabControl) return;
-
-    //    var currentlySelectedItem = tabControl.SelectedContent;
-
-    //    if (currentlySelectedItem is not Visual visual) return;
-
-    //    var listBox = FindChild<ListBox>(visual);
-
-    //    if (listBox == null) return;
-
-    //    if (listBox.SelectedIndex == -1)
-    //        listBox.SelectedIndex = 0;
-
-    //    //OnModuleSelected(listBox, null);
-    //}
-
-    // Helper method to find a child control of a specific type
-    //private T FindChild<T>(Visual parent) where T : Visual
-    //{
-    //    foreach (var child in parent.GetVisualChildren())
-    //    {
-    //        if (child is T result)
-    //        {
-    //            return result;
-    //        }
-
-    //        // Recursively search in child elements
-    //        var foundChild = FindChild<T>(child);
-    //        if (foundChild != null)
-    //        {
-    //            return foundChild;
-    //        }
-    //    }
-
-    //    return null;
-    //}
-
-    //private void OnModuleSelected(object? sender, SelectionChangedEventArgs e)
-    //{
-
-    //    if(sender is not ListBox moduleListBox) return;
-    //    if (moduleListBox.ItemCount == 0) return;
-
-    //    var index = moduleListBox.SelectedIndex;
-    //    if (index == -1) index = 0;
-    //    if (moduleListBox.Items[index] is not InstallableTrackingModule module) return;
-
-    //    switch (module.InstallationState)
-    //    {
-    //        case InstallState.NotInstalled or InstallState.Outdated:
-    //        {
-    //            InstallButton.Content = "Install";
-    //            InstallButton.IsEnabled = true;
-    //            break;
-    //        }
-    //        case InstallState.Installed:
-    //        {
-    //            InstallButton.Content = "Uninstall";
-    //            InstallButton.IsEnabled = true;
-    //            break;
-    //        }
-    //    }
-
-    //    if (sender is ListBox listBox && listBox.SelectedItem is InstallableTrackingModule selectedModule)
-    //    {
-    //        ModuleSelected?.Invoke(selectedModule);
-    //    }
-    //}
-
-
     private void OnDragEnter(object? sender, DragEventArgs e)
     {
         _dropOverlayService.Show();
@@ -194,6 +110,7 @@ public partial class ModuleRegistryView : UserControl
     {
         _dropOverlayService.Hide();
 
+        // TODO: this should also be moved to ViewModel
         var vm = DataContext as ModuleRegistryViewModel;
 
         var items = e.Data.GetFiles();

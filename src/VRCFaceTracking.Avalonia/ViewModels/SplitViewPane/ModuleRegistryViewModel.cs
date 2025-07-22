@@ -101,6 +101,7 @@ public partial class ModuleRegistryViewModel : ViewModelBase
         }
     }
 
+
     partial void OnSelectedTabIndexChanged(int oldValue, int newValue)
     {
         if (newValue == 0) 
@@ -194,19 +195,6 @@ public partial class ModuleRegistryViewModel : ViewModelBase
     private void RequestReinitialize()
     {
         RequestReinit = true;
-    }
-
-    [RelayCommand]
-    public void ModuleTryReinitialize()
-    {
-        if (RequestReinit)
-        {
-            RequestReinit = false;
-            var installedModules = InstalledModules.ToList();
-            _moduleDataService.SaveInstalledModulesDataAsync(installedModules);
-            _libManager.TeardownAllAndResetAsync();
-            _libManager.Initialize();
-        }
     }
 
     private void ModuleRatingChanged(object? sender, PropertyChangedEventArgs args)
@@ -323,32 +311,6 @@ public partial class ModuleRegistryViewModel : ViewModelBase
         }
     }
 
-    [RelayCommand]
-    public async Task RemoteModuleInstalledAsync(InstallableTrackingModule module)
-    {
-        switch (Module.InstallationState)
-        {
-            case InstallState.NotInstalled or InstallState.Outdated:
-            {
-                var path = await _moduleInstaller.InstallRemoteModule(module);
-                if (!string.IsNullOrEmpty(path))
-                {
-                    module!.InstallationState = InstallState.Installed;
-                    // TODO: Uncomment
-                    //await _moduleDataService.IncrementDownloadsAsync(module);
-                    module!.Downloads++;
-                }
-                break;
-            }
-            case InstallState.Installed:
-            {
-                _moduleInstaller.MarkModuleForDeletion(module);
-                break;
-            }
-        }
-        ResetInstalledModulesList();
-    }
-
     private void ResetInstalledModulesList(bool suppressReinit = false)
     {
         var installedModules = _moduleDataService.GetInstalledModules()
@@ -391,29 +353,9 @@ public partial class ModuleRegistryViewModel : ViewModelBase
         }
     }
 
-    public void OpenModuleUrl()
-    {
-        OpenUrl(_module.ModulePageUrl);
-    }
-
-    private void OpenUrl(string URL)
-    {
-        try
-        {
-            Process.Start(URL);
-        }
-        catch
-        {
-
-            var url = URL.Replace("&", "^&");
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-        }
-    }
-
     public void DetachedFromVisualTree()
     {
         _moduleDataService.SaveInstalledModulesDataAsync(InstalledModules);
-
         ModuleTryReinitialize();
     }
 
@@ -430,6 +372,60 @@ public partial class ModuleRegistryViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand]
+    public void ModuleTryReinitialize()
+    {
+        if (RequestReinit)
+        {
+            RequestReinit = false;
+            var installedModules = InstalledModules.ToList();
+            _moduleDataService.SaveInstalledModulesDataAsync(installedModules);
+            _libManager.TeardownAllAndResetAsync();
+            _libManager.Initialize();
+        }
+    }
+
+    [RelayCommand]
+    public void OpenUrl(string URL)
+    {
+        try
+        {
+            Process.Start(URL);
+        }
+        catch
+        {
+
+            var url = URL.Replace("&", "^&");
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        }
+    }
+
+    [RelayCommand]
+    public async Task RemoteModuleInstalledAsync(InstallableTrackingModule module)
+    {
+        switch (Module.InstallationState)
+        {
+            case InstallState.NotInstalled or InstallState.Outdated:
+            {
+                var path = await _moduleInstaller.InstallRemoteModule(module);
+                if (!string.IsNullOrEmpty(path))
+                {
+                    module!.InstallationState = InstallState.Installed;
+                    // TODO: Uncomment
+                    //await _moduleDataService.IncrementDownloadsAsync(module);
+                    module!.Downloads++;
+                }
+                break;
+            }
+            case InstallState.Installed:
+            {
+                _moduleInstaller.MarkModuleForDeletion(module);
+                break;
+            }
+        }
+        ResetInstalledModulesList();
+    }
+
     // A workaround for changing order without modifying the InstallableTrackingModule.cs
     [RelayCommand]
     public void DecrementOrder(InstallableTrackingModule module)
@@ -438,6 +434,7 @@ public partial class ModuleRegistryViewModel : ViewModelBase
             module.Order--;
         }
     }
+
     [RelayCommand]
     public void IncrementOrder(InstallableTrackingModule module)
     {
@@ -447,25 +444,8 @@ public partial class ModuleRegistryViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    public void InstallModule(InstallableTrackingModule module)
-    {
-
-    }
-
-    [RelayCommand]
     public void BrowseLocal()
     {
-
-    }
-
-    [RelayCommand]
-    public void ReinitializeModules()
-    {
-
-    }
-    [RelayCommand]
-    public void SelectModule()
-    {
-
+        // i think this logic should be here but i'm not sure how to make it work
     }
 }

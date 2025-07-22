@@ -357,7 +357,8 @@
                           <LineBreak />
                           <htControls:Hyperlink
                               Alias="{Binding Module.ModulePageUrl}"
-                              Command="{Binding OpenModuleUrl}"
+                              Command="{Binding OpenUrlCommand}"
+                              CommandParameter="{Binding Module.ModulePageUrl}"
                               Url="{Binding Module.ModulePageUrl}" />
                         </TextBlock>
 
