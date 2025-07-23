@@ -12,6 +12,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using CommunityToolkit.Mvvm.Input;
+using RatingControlSample.Controls;
 using VRCFaceTracking.Avalonia.Assets;
 using VRCFaceTracking.Avalonia.Services;
 using VRCFaceTracking.Avalonia.Views;
@@ -57,11 +58,10 @@ public partial class ModuleRegistryViewModel : ViewModelBase
         SelectedInfoModule = InstalledModules.First();
     }
 
-    [NotifyPropertyChangedFor(nameof(InstallButtonText))]
-    [NotifyPropertyChangedFor(nameof(InstallButtonActive))]
-    [ObservableProperty] private InstallableTrackingModule _module;
     [ObservableProperty] private InstallableTrackingModule _selectedInstalledModule;
     [ObservableProperty] private InstallableTrackingModule _selectedInfoModule;
+    [ObservableProperty] private int _selectedInstalledModuleRating;
+    [ObservableProperty] private int _selectedInfoModuleRating;
     [ObservableProperty] private bool _requestReinit;
     [ObservableProperty] private string _searchText;
     [ObservableProperty] private bool _noRemoteModulesDetected;
@@ -72,53 +72,6 @@ public partial class ModuleRegistryViewModel : ViewModelBase
     public ObservableCollection<InstallableTrackingModule> FilteredModuleInfos { get; } = [];
     public ObservableCollection<InstallableTrackingModule> InstalledModules { get; set; } = [];
 
-    public string InstallButtonText
-    {
-        get
-        {
-            if (Module == null)
-                return Resources.InstallButton_Text_Install;
-
-            return Module.InstallationState switch
-            {
-                InstallState.NotInstalled or InstallState.Outdated => Resources.InstallButton_Text_Install,
-                InstallState.Installed => Resources.InstallButton_Text_Uninstall,
-                InstallState.AwaitingRestart => Resources.InstallButton_Text_AwaitingRestart,
-                _ => Resources.InstallButton_Text_Install,
-            };
-        }
-    }
-    public bool InstallButtonActive
-    {
-        get
-        {
-            if(Module == null)
-                return false;
-            if (Module.InstallationState == InstallState.AwaitingRestart)
-                return false;
-
-            return true;
-        }
-    }
-
-
-    partial void OnSelectedTabIndexChanged(int oldValue, int newValue)
-    {
-        if (newValue == 0) 
-            Module = SelectedInfoModule;
-        if (newValue == 1)
-            Module = SelectedInstalledModule;
-    }
-    partial void OnSelectedInfoModuleChanged(InstallableTrackingModule value)
-    {
-        if(SelectedTabIndex == 0)
-            Module = value;
-    }
-    partial void OnSelectedInstalledModuleChanged(InstallableTrackingModule value)
-    {
-        if(SelectedTabIndex == 1)
-            Module = value;
-    }
     public InstallableTrackingModule[] GetRemoteModules()
     {
         IEnumerable<InstallableTrackingModule> remoteModules = [];
@@ -170,44 +123,11 @@ public partial class ModuleRegistryViewModel : ViewModelBase
         return modules;
     }
 
-    partial void OnModuleChanged(InstallableTrackingModule oldValue, InstallableTrackingModule newValue)
-    {
-        if (oldValue != null)
-            oldValue.PropertyChanged -= OnModulePropertyChanged;
-
-        if (newValue != null)
-        {
-            newValue.PropertyChanged += OnModulePropertyChanged;
-        }
-    }
-
-    private void OnModulePropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(InstallableTrackingModule.InstallationState))
-        {
-            OnPropertyChanged(nameof(InstallButtonText));
-            OnPropertyChanged(nameof(InstallButtonActive));
-        }
-    }
-
     public int CorrectedModuleCount => Math.Max(0, InstalledModules.Count - 1);
 
     private void RequestReinitialize()
     {
         RequestReinit = true;
-    }
-
-    private void ModuleRatingChanged(object? sender, PropertyChangedEventArgs args)
-    {
-
-        if (args.PropertyName != "ModuleRating")
-            return;
-
-        // Can't rate local modules
-        if (Module.Local)
-            return;
-
-        _moduleDataService.SetMyRatingAsync(Module, ModuleRating);
     }
 
     partial void OnSearchTextChanged(string value)
@@ -232,48 +152,60 @@ public partial class ModuleRegistryViewModel : ViewModelBase
         }
     }
 
-    partial void OnModuleChanged(InstallableTrackingModule value)
+    partial void OnSelectedInstalledModuleChanged(InstallableTrackingModule oldValue, InstallableTrackingModule newValue)
     {
-        if (value == null)
+        if (newValue == null)
             return;
 
         Dispatcher.UIThread.Post((Action)(async () =>
         {
             // Local modules don't have ratings 
-            if (value.Local)
+            if (newValue.Local)
             {
+                SelectedInstalledModuleRating = 0;
                 ModuleRating = 0;
                 return;
             }
 
-            var myRating = await this._moduleDataService.GetMyRatingAsync(value);
+            var myRating = await this._moduleDataService.GetMyRatingAsync(newValue);
 
-            // We use a lock here because without it a race condition occurres
-            // when adding propertyChanged handlers.
-            // a handler might be added from another async call before this one
-            // finishes causing unwanted events firing.
-            await _moduleRatingLock.WaitAsync();
-            try
+            // Check if the selected module is still the same one that we called
+            // GetMyRatingAsync for.
+            if (SelectedInstalledModule?.ModuleId != newValue.ModuleId)
+                return;
+
+            if (myRating != null)
+                SelectedInstalledModuleRating = (int)myRating;
+            else
+                SelectedInstalledModuleRating = 0;
+        }));
+    }
+
+    partial void OnSelectedInfoModuleChanged(InstallableTrackingModule oldValue, InstallableTrackingModule newValue)
+    {
+        if (newValue == null)
+            return;
+
+        Dispatcher.UIThread.Post((Action)(async () =>
+        {
+            // Local modules don't have ratings 
+            if (newValue.Local)
             {
-                // Check if the selected module is still the same one that we called
-                // GetMyRatingAsync for.
-                if (Module?.ModuleId != value.ModuleId)
-                    return;
-
-                // Prevent events from firing
-                PropertyChanged -= ModuleRatingChanged;
-                if (myRating != null)
-                    ModuleRating = (int)myRating;
-                else
-                    ModuleRating = 0;
-
-                // return the events back
-                PropertyChanged += ModuleRatingChanged;
+                SelectedInfoModuleRating = 0;
+                return;
             }
-            finally
-            {
-                _moduleRatingLock.Release();
-            }
+
+            var myRating = await this._moduleDataService.GetMyRatingAsync(newValue);
+
+            // Check if the selected module is still the same one that we called
+            // GetMyRatingAsync for.
+            if (SelectedInfoModule?.ModuleId != newValue.ModuleId)
+                return;
+
+            if (myRating != null)
+                SelectedInfoModuleRating = (int)myRating;
+            else
+                SelectedInfoModuleRating = 0;
         }));
     }
 
@@ -403,7 +335,7 @@ public partial class ModuleRegistryViewModel : ViewModelBase
     [RelayCommand]
     public async Task RemoteModuleInstalledAsync(InstallableTrackingModule module)
     {
-        switch (Module.InstallationState)
+        switch (module.InstallationState)
         {
             case InstallState.NotInstalled or InstallState.Outdated:
             {
@@ -447,5 +379,19 @@ public partial class ModuleRegistryViewModel : ViewModelBase
     public void BrowseLocal()
     {
         // i think this logic should be here but i'm not sure how to make it work
+    }
+
+    [RelayCommand]
+    public void SetModuleRating(RatingControl.RatingCommandArgs args)
+    {
+        int rating = args.Rating;
+        // should be safe to cast here
+        InstallableTrackingModule module = (InstallableTrackingModule)args.Value;
+
+        // Can't rate local modules
+        if (module.Local)
+            return;
+
+        _moduleDataService.SetMyRatingAsync(module, rating);
     }
 }

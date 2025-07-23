@@ -10,6 +10,7 @@ using System.Linq;
 using Avalonia.Input;
 using Avalonia.VisualTree;
 using Avalonia.Threading;
+using System.Windows.Input;
 
 namespace RatingControlSample.Controls
 {
@@ -97,6 +98,23 @@ namespace RatingControlSample.Controls
         {
             get { return _value; }
             set { SetAndRaise(ValueProperty, ref _value, value); }
+        }
+
+        public static readonly StyledProperty<ICommand> RatingCommandProperty =
+            AvaloniaProperty.Register<RatingControl, ICommand>(nameof(RatingCommand));
+
+        public ICommand RatingCommand
+        {
+            get => GetValue(RatingCommandProperty);
+            set => SetValue(RatingCommandProperty, value);
+        }
+        public static readonly StyledProperty<object> RatingCommandParameterProperty =
+            AvaloniaProperty.Register<RatingControl, object>(nameof(RatingCommandParameter));
+
+        public object RatingCommandParameter
+        {
+            get => GetValue(RatingCommandParameterProperty);
+            set => SetValue(RatingCommandParameterProperty, value);
         }
 
         bool _isInsideProperty = false;
@@ -260,6 +278,12 @@ namespace RatingControlSample.Controls
             }
         }
 
+        public class RatingCommandArgs()
+        {
+            public object Value { get; set; }
+            public int Rating { get; set; }
+
+        }
         private void StarsPresenter_PointerReleased(object? sender, Avalonia.Input.PointerReleasedEventArgs e)
         {
             // e.Source is the original source of this event. In our case, if the user clicked on a star, the original source is a Path.
@@ -269,6 +293,18 @@ namespace RatingControlSample.Controls
                 // Let's cast the DataContext to an int. If that cast fails, use "0" as a fallback.
                 HoverValue = 0;
                 Value = star.DataContext as int? ?? 0;
+
+
+
+                // this is stupid, but i dont want to write converters for a single usecase
+                RatingCommandArgs args = new RatingCommandArgs();
+                args.Rating = Value;
+                args.Value = RatingCommandParameter;
+
+                if(RatingCommand != null && RatingCommand.CanExecute(args))
+                {
+                    RatingCommand.Execute(args);
+                } 
             }
         }
     }
