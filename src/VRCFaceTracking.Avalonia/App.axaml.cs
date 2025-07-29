@@ -78,6 +78,7 @@ public partial class App : Application
                 services.AddSingleton<IMessenger>(WeakReferenceMessenger.Default);
 
                 services.AddSingleton<ILocalSettingsService, LocalSettingsService>();
+                services.AddSingleton<ProfileService>();
                 services.AddSingleton<IThemeSelectorService, ThemeSelectorService>();
                 services.AddSingleton<ILanguageSelectorService, LanguageSelectorService>();
 

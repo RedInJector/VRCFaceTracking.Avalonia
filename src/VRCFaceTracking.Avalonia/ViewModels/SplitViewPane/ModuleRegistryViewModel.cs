@@ -9,11 +9,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using Avalonia.Xaml.Interactions.Custom;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using CommunityToolkit.Mvvm.Input;
 using RatingControlSample.Controls;
 using VRCFaceTracking.Avalonia.Assets;
+using VRCFaceTracking.Avalonia.Helpers;
+using VRCFaceTracking.Avalonia.Models;
 using VRCFaceTracking.Avalonia.Services;
 using VRCFaceTracking.Avalonia.Views;
 using VRCFaceTracking.Core.Contracts.Services;
@@ -28,13 +31,14 @@ public partial class ModuleRegistryViewModel : ViewModelBase
     private IModuleDataService _moduleDataService { get; }
     private ModuleInstaller _moduleInstaller { get; }
     private ILibManager _libManager { get; }
-    private SemaphoreSlim _moduleRatingLock = new(1);
+    private ProfileService _profileService { get; }
 
     public ModuleRegistryViewModel()
     {
         _moduleDataService = Ioc.Default.GetService<IModuleDataService>()!;
         _moduleInstaller = Ioc.Default.GetService<ModuleInstaller>()!;
         _libManager = Ioc.Default.GetService<ILibManager>()!;
+        _profileService = Ioc.Default.GetService<ProfileService>()!;
 
         ModuleRegistryView.LocalModuleInstalled += LocalModuleInstalled;
         //ModuleRegistryView.RemoteModuleInstalled += RemoteModuleInstalled;
@@ -56,7 +60,16 @@ public partial class ModuleRegistryViewModel : ViewModelBase
         }
         SelectedInstalledModule = InstalledModules.First();
         SelectedInfoModule = InstalledModules.First();
+
+        Dispatcher.UIThread.Post(async () =>
+        {
+            await _profileService.InitializeAsync();
+            Profiles = new ObservableCollection<Profile>(_profileService.GetProfiles());
+            SelectedProfile = Profiles.FirstOrDefault();
+            OnPropertyChanged(nameof(Profiles));
+        });
     }
+
 
     [ObservableProperty] private InstallableTrackingModule _selectedInstalledModule;
     [ObservableProperty] private InstallableTrackingModule _selectedInfoModule;
@@ -69,8 +82,15 @@ public partial class ModuleRegistryViewModel : ViewModelBase
     [ObservableProperty] private int _moduleRating;
     [ObservableProperty] private bool _dragItemDetected;
     [ObservableProperty] private int _selectedTabIndex;
+
+    [ObservableProperty] private InstallableTrackingModule _selectedProfileInstalledModule;
+    [ObservableProperty] private Profile _selectedProfile;
+    [ObservableProperty] private string _selectedProfileName;
+    [ObservableProperty] private string _selectedProfileNameError;
     public ObservableCollection<InstallableTrackingModule> FilteredModuleInfos { get; } = [];
     public ObservableCollection<InstallableTrackingModule> InstalledModules { get; set; } = [];
+    public ObservableCollection<Profile> Profiles { get; set; } = [];
+    public ObservableCollectionEx<InstallableTrackingModule> ModulesAvaliableForProfile { get; set; } = [];
 
     public InstallableTrackingModule[] GetRemoteModules()
     {
@@ -125,6 +145,64 @@ public partial class ModuleRegistryViewModel : ViewModelBase
 
     public int CorrectedModuleCount => Math.Max(0, InstalledModules.Count - 1);
 
+
+    private bool IsModuleSameAs(InstallableTrackingModule val1, InstallableTrackingModule val2)
+    {
+        if (val1 == null || val2 == null) return false;
+
+        return val1.ModuleName == val2.ModuleName
+            && val1.AuthorName == val2.AuthorName
+            && val1.ModuleId == val2.ModuleId;
+
+    }
+    private void RecalculateAvaliableModules()
+    {
+        ModulesAvaliableForProfile.Clear();
+        if (SelectedProfile == null)
+            return;
+        if (InstalledModules == null)
+            return;
+
+        List<InstallableTrackingModule> avaliable = [];
+        // This is just a fancy double for loop lol
+        avaliable = InstalledModules.Where(m =>
+                SelectedProfile.Modules.Where(s => IsModuleSameAs(m, s))
+                .Count() == 0
+            ).ToList();
+
+        ModulesAvaliableForProfile.AddRange(avaliable);
+    }
+
+    partial void OnSelectedProfileNameChanged(string oldValue, string newValue)
+    {
+        if (newValue.Length < 1)
+        {
+            SelectedProfileNameError = "Can't be less than 1 char";
+            return;
+        }
+        if (Profiles.Where(p => p.Name.Equals(newValue) && !p.Name.Equals(SelectedProfile.Name)).Any())
+        {
+            SelectedProfileNameError = "Already exists";
+            return;
+        }
+        SelectedProfileNameError = "";
+        SelectedProfile.Name = newValue;
+
+        _profileService.SaveProfiles();
+    }
+
+    partial void OnSelectedProfileChanged(Profile value)
+    {
+        if (value != null)
+            SelectedProfileName = value.Name;
+        else
+        {
+            SelectedProfileNameError = null;
+            SelectedProfileName = "";
+        }
+
+        RecalculateAvaliableModules();
+    }
     private void RequestReinitialize()
     {
         RequestReinit = true;
@@ -299,7 +377,8 @@ public partial class ModuleRegistryViewModel : ViewModelBase
             path = await _moduleInstaller.InstallLocalModule(file.Path.AbsolutePath);
             return !string.IsNullOrEmpty(path);
         }
-        catch (Exception ex) {
+        catch (Exception ex)
+        {
             return false;
         }
     }
@@ -338,22 +417,22 @@ public partial class ModuleRegistryViewModel : ViewModelBase
         switch (module.InstallationState)
         {
             case InstallState.NotInstalled or InstallState.Outdated:
-            {
-                var path = await _moduleInstaller.InstallRemoteModule(module);
-                if (!string.IsNullOrEmpty(path))
                 {
-                    module!.InstallationState = InstallState.Installed;
-                    // TODO: Uncomment
-                    //await _moduleDataService.IncrementDownloadsAsync(module);
-                    module!.Downloads++;
+                    var path = await _moduleInstaller.InstallRemoteModule(module);
+                    if (!string.IsNullOrEmpty(path))
+                    {
+                        module!.InstallationState = InstallState.Installed;
+                        // TODO: Uncomment
+                        //await _moduleDataService.IncrementDownloadsAsync(module);
+                        module!.Downloads++;
+                    }
+                    break;
                 }
-                break;
-            }
             case InstallState.Installed:
-            {
-                _moduleInstaller.MarkModuleForDeletion(module);
-                break;
-            }
+                {
+                    _moduleInstaller.MarkModuleForDeletion(module);
+                    break;
+                }
         }
         ResetInstalledModulesList();
     }
@@ -362,7 +441,8 @@ public partial class ModuleRegistryViewModel : ViewModelBase
     [RelayCommand]
     public void DecrementOrder(InstallableTrackingModule module)
     {
-        if (module != null) {
+        if (module != null)
+        {
             module.Order--;
         }
     }
@@ -370,7 +450,8 @@ public partial class ModuleRegistryViewModel : ViewModelBase
     [RelayCommand]
     public void IncrementOrder(InstallableTrackingModule module)
     {
-        if (module != null) {
+        if (module != null)
+        {
             module.Order++;
         }
     }
@@ -393,5 +474,49 @@ public partial class ModuleRegistryViewModel : ViewModelBase
             return;
 
         _moduleDataService.SetMyRatingAsync(module, rating);
+    }
+
+    [RelayCommand]
+    public void AddNewProfile()
+    {
+        var p = new Profile();
+        if (SelectedProfile == null)
+            p.Name = "1";
+        else
+            p.Name = SelectedProfile.Name + "1";
+
+        _profileService.AddProfile(p);
+        Profiles.Add(p);
+
+        SelectedProfile = p;
+
+        _profileService.SaveProfiles();
+    }
+
+    [RelayCommand]
+    public void RemoveProfile(Profile profile)
+    {
+        Profiles.Remove(profile);
+        _profileService.RemoveProfile(profile);
+
+        _profileService.SaveProfiles();
+    }
+
+    [RelayCommand]
+    public void AddModuleToSelectedProfile(InstallableTrackingModule module)
+    {
+        SelectedProfile.Modules.Add(module);
+
+        RecalculateAvaliableModules();
+        _profileService.SaveProfiles();
+    }
+    [RelayCommand]
+    public void RemoveModuleFromSelectedProfile(InstallableTrackingModule module)
+    {
+        SelectedProfile.Modules.Remove(module);
+
+
+        RecalculateAvaliableModules();
+        _profileService.SaveProfiles();
     }
 }

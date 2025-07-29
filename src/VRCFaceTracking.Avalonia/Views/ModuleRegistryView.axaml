@@ -13,6 +13,7 @@
     xmlns:assets="clr-namespace:VRCFaceTracking.Avalonia.Assets"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:models="clr-namespace:VRCFaceTracking.Core.Models;assembly=VRCFaceTracking.Core"
+    xmlns:amodels="clr-namespace:VRCFaceTracking.Avalonia.Models"
     xmlns:vm="clr-namespace:VRCFaceTracking.Avalonia.ViewModels.SplitViewPane"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
@@ -105,7 +106,6 @@
                         <TextBox
                           Text="{Binding SearchText}"
                           Watermark="Search modules..."
-                          Width="315"
                           x:Name="SearchBox" />
                         <Button Width="32" Height="32" ToolTip.Tip="Clear" Click="ClearSearchBox_Click">
                           <TextBlock Text="✕" FontSize="16" VerticalAlignment="Center" HorizontalAlignment="Center"/>
@@ -225,9 +225,52 @@
                     </StackPanel>
                   </TabItem>
                   <TabItem FontWeight="SemiBold"
+                      HorizontalAlignment="Stretch"
                       Header="Profiles"
                       x:Name="Profiles">
-                    <TextBlock>Profile selection would go here</TextBlock>
+                    <DockPanel Margin="6,8,0,0" >
+                      <Grid DockPanel.Dock="Top" ColumnDefinitions="*, Auto" HorizontalAlignment="Stretch">
+                        <TextBox
+                              HorizontalAlignment="Stretch"
+                              Grid.Column="0"
+                              Watermark="Search profiles or create one..."
+                          />
+                        <Button
+                            Grid.Column="1"
+                            Width="32"
+                            Height="32"
+                            ToolTip.Tip="Clear"
+                            Command="{Binding AddNewProfileCommand}">
+                          <TextBlock Text="+" FontSize="16" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Button>
+                      </Grid>
+                      <ListBox
+                          x:Name="LocalListBox"
+                          Classes="draggable"
+                          MaxHeight="400"
+                          SelectionMode="AlwaysSelected"
+                          ItemsSource="{Binding Profiles}"
+                          SelectedItem="{Binding SelectedProfile, Mode=TwoWay}">
+                        <ListBox.ItemTemplate>
+                          <DataTemplate x:DataType="amodels:Profile">
+                            <Grid ColumnDefinitions="*, Auto">
+                              <TextBlock
+                                  Grid.Column="0"
+                                  HorizontalAlignment="Stretch"
+                                  Text="{Binding Name}"/>
+                              <Button
+                                  Grid.Column="1"
+                                  Width="32"
+                                  Height="32"
+                                  ToolTip.Tip="Clear"
+                                  Command="{Binding #LocalListBox.((vm:ModuleRegistryViewModel)DataContext).RemoveProfile}"
+                                  CommandParameter="{Binding}"
+                                  Content="-"/>
+                            </Grid>
+                          </DataTemplate>
+                        </ListBox.ItemTemplate>
+                      </ListBox>
+                    </DockPanel>
                   </TabItem>
                 </TabControl>
               </Grid>
@@ -235,7 +278,7 @@
               <!--
                 We do it this way because we want independent panels for each Left-hand content.
                 Carousel uses the same index as TabControl 
-                The amount of tabs should always match or we break things.
+                The amount of tabs should always match or we break things or crash, idk, never tried.
                 -->
               <Carousel SelectedIndex="{Binding SelectedTabIndex}" Grid.Column="1"
                   HorizontalAlignment="Stretch"
@@ -270,17 +313,12 @@
                                 Command="{Binding RemoteModuleInstalledCommand}"
                                 CommandParameter="{Binding SelectedInfoModule}"
                                 HorizontalAlignment="Left"
-                                VerticalAlignment="Center"
-                                >
+                                VerticalAlignment="Center">
                               Install
                             </Button>
                           </StackPanel>
                         </StackPanel>
 
-                        <!--
-                                                So apparently 0 and 1 correspond to falsy and truthy values in AXAML?
-                                                I have no idea why this works, but it does wtf.
-                                            -->
                         <Separator />
 
                         <!--  Local controls for managing module settings!  -->
@@ -401,9 +439,9 @@
                       </StackPanel>
                     </Border>
                   </StackPanel>
-                  <!--  Right-hand content Second panel  -->
                 </ScrollViewer>
 
+                <!--  Right-hand content Second panel  -->
                 <ScrollViewer>
                   <StackPanel IsVisible="{Binding ModulesDetected}" Spacing="20">
                     <TextBlock
@@ -440,11 +478,7 @@
                           </StackPanel>
                         </StackPanel>
 
-                        <!--
-                                                So apparently 0 and 1 correspond to falsy and truthy values in AXAML?
-                                                I have no idea why this works, but it does wtf.
-                                            -->
-                        <Separator IsVisible="{Binding #TabControl.SelectedIndex}" />
+                        <Separator  />
 
                         <!--  Local controls for managing module settings!  -->
                         <StackPanel
@@ -574,7 +608,95 @@
                 </ScrollViewer>
 
                 <ScrollViewer>
-                  <TextBlock>Profiles configuration would go here</TextBlock>
+                  <DockPanel>
+                    <TextBox
+                        DockPanel.Dock="Top"
+                        FontSize="24"
+                        FontWeight="SemiBold"
+                        HorizontalAlignment="Stretch"
+                        Margin="0,9,0,0"
+                        Text="{Binding SelectedProfileName, Mode=TwoWay}"/>
+                    <TextBlock
+                        IsVisible="{Binding SelectedProfileNameError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                        DockPanel.Dock="Top"
+                        Text="{Binding SelectedProfileNameError}"/>
+                    <Border
+                        DockPanel.Dock="Top"
+                        Margin="0,20,0,0"
+                        Background="{DynamicResource SystemChromeMediumColor}"
+                        CornerRadius="6,6,6,6"
+                        VerticalAlignment="Stretch"
+                        Padding="12,12,12,12">
+                      <Grid
+                        ColumnDefinitions="*, *"
+                        VerticalAlignment="Stretch">
+                        <Grid
+                          Grid.Column="0"
+                          Margin="0,0,10,0"
+                          VerticalAlignment="Stretch">
+                          <ListBox
+                              x:Name="LocalListBox1"
+                              Classes="draggable"
+                              MaxHeight="400"
+                              SelectionMode="AlwaysSelected"
+                              ItemsSource="{Binding SelectedProfile.Modules}">
+                            
+                              <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="models:InstallableTrackingModule">
+                                  <Grid ColumnDefinitions="*, Auto">
+                                    <TextBlock
+                                      Grid.Column="0"
+                                      Text="{Binding ModuleName}"/>
+                                    <Button
+                                        IsEnabled="{Binding #LocalListBox2.((vm:ModuleRegistryViewModel)DataContext).SelectedProfile,
+                                                    Converter={x:Static ObjectConverters.IsNotNull}}"
+                                        Grid.Column="1"
+                                        Width="32"
+                                        Height="32"
+                                        ToolTip.Tip="Clear"
+                                        Command="{Binding #LocalListBox2.((vm:ModuleRegistryViewModel)DataContext).RemoveModuleFromSelectedProfileCommand}"
+                                        CommandParameter="{Binding}"
+                                        Content="-&gt;"/>
+                                  </Grid>
+                                </DataTemplate>
+                              </ListBox.ItemTemplate>
+                          </ListBox>
+                        </Grid>
+                        <Grid
+                          Grid.Column="1"
+                          Margin="10,0,0,0"
+                          VerticalAlignment="Stretch">
+                          <ListBox
+                              x:Name="LocalListBox2"
+                              Classes="draggable"
+                              MaxHeight="400"
+                              SelectionMode="AlwaysSelected"
+                              ItemsSource="{Binding ModulesAvaliableForProfile}"
+                              SelectedItem="{Binding SelectedProfileInstalledModule, Mode=TwoWay}">
+                            <ListBox.ItemTemplate>
+                              <DataTemplate x:DataType="models:InstallableTrackingModule">
+                                <Grid ColumnDefinitions="Auto, *">
+                                  <Button
+                                      IsEnabled="{Binding #LocalListBox2.((vm:ModuleRegistryViewModel)DataContext).SelectedProfile,
+                                                  Converter={x:Static ObjectConverters.IsNotNull}}"
+                                      Grid.Column="0"
+                                      Width="32"
+                                      Height="32"
+                                      ToolTip.Tip="Clear"
+                                      Command="{Binding #LocalListBox2.((vm:ModuleRegistryViewModel)DataContext).AddModuleToSelectedProfileCommand}"
+                                      CommandParameter="{Binding}"
+                                      Content="&lt;-"/>
+                                  <TextBlock
+                                      Grid.Column="1"
+                                      Text="{Binding ModuleName}"/>
+                                </Grid>
+                              </DataTemplate>
+                            </ListBox.ItemTemplate>
+                          </ListBox>
+                        </Grid>
+                      </Grid>
+                    </Border>
+                  </DockPanel>
                 </ScrollViewer>
               </Carousel>
             </Grid>
