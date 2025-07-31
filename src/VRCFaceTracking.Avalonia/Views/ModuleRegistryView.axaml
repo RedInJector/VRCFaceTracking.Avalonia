@@ -411,7 +411,7 @@
                             <Run FontWeight="Bold" Text="{x:Static assets:Resources.YourRating_Text}" />
                             <LineBreak />
                             <InlineUIContainer>
-                              <stars:RatingControl Margin="0,-3,0,0" NumberOfStars="5" Value="{Binding ModuleRating}" />
+                              <stars:RatingControl Margin="0,-3,0,0" NumberOfStars="5" Value="{Binding SelectedInfoModuleRating}" />
                             </InlineUIContainer>
                           </TextBlock>
                         </StackPanel>
