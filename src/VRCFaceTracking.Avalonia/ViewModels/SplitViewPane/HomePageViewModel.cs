@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
+using VRCFaceTracking.Avalonia.Models;
+using VRCFaceTracking.Avalonia.Services;
 using VRCFaceTracking.Avalonia.Views;
 using VRCFaceTracking.Core.Contracts;
 using VRCFaceTracking.Core.Contracts.Services;
@@ -20,6 +24,7 @@ public partial class HomePageViewModel : ViewModelBase
     public ILibManager LibManager { get; }
     public IOscTarget OscTarget { get; }
     private IModuleDataService ModuleDataService { get; }
+    private ProfileService _profileService { get; }
     private OscRecvService OscRecvService { get; }
     private OscSendService OscSendService { get; }
 
@@ -42,6 +47,11 @@ public partial class HomePageViewModel : ViewModelBase
     [ObservableProperty] private bool _isLegacyAvatar;
 
     [ObservableProperty] private bool _isTestAvatar;
+    [ObservableProperty] private Profile _selectedProfile = null;
+
+    public ObservableCollection<ModuleMetadata> LoadedModulesMetadata { get; set; }
+    public ObservableCollection<Profile> Profiles { get; set; }
+
 
     private readonly DispatcherTimer _msgCounterTimer;
 
@@ -61,6 +71,7 @@ public partial class HomePageViewModel : ViewModelBase
         OscTarget = Ioc.Default.GetService<IOscTarget>()!;
         OscRecvService = Ioc.Default.GetService<OscRecvService>()!;
         OscSendService = Ioc.Default.GetService<OscSendService>()!;
+        _profileService = Ioc.Default.GetService<ProfileService>()!;
 
         // Modules
         var installedNewModules = ModuleDataService.GetInstalledModules();
@@ -89,6 +100,15 @@ public partial class HomePageViewModel : ViewModelBase
             IsTestAvatar = ParameterOutputService.AvatarInfo?.Id.StartsWith("local:") ?? false;
         };
         _msgCounterTimer.Start();
+
+        LoadedModulesMetadata = LibManager.LoadedModulesMetadata;
+
+        Dispatcher.UIThread.Post(async () =>
+        {
+            Profiles = new ObservableCollection<Profile>(await _profileService.GetProfilesAsync());
+            OnPropertyChanged(nameof(Profiles));
+            SelectedProfile = await _profileService.GetActiveProfile();
+        });
     }
 
     private void MessageReceived(OscMessage msg) => _messagesRecvd++;
@@ -112,5 +132,22 @@ public partial class HomePageViewModel : ViewModelBase
     {
         // Maybe make this show only once, as opposed to everytime you open this page?
         NoModulesInstalled = false;
+    }
+
+    partial void OnSelectedProfileChanged(Profile value)
+    {
+
+        Dispatcher.UIThread.Post(async () =>
+        {
+            if (await _profileService.GetActiveProfile() == value)
+                return;
+
+            LoadedModulesMetadata = null;
+            OnPropertyChanged(nameof(LoadedModulesMetadata));
+
+            await _profileService.ApplyProfile(value);
+            LoadedModulesMetadata = LibManager.LoadedModulesMetadata;
+            OnPropertyChanged(nameof(LoadedModulesMetadata));
+        });
     }
 }

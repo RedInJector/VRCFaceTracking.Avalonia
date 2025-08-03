@@ -50,7 +50,8 @@ namespace VRCFaceTracking.Avalonia.Tests
                 .Setup(m => m.GetInstalledModules())
                 .Returns(new List<InstallableTrackingModule> { installedModule });
 
-            var result = await _profileService.InitializeAsync();
+            await _profileService.InitializeAsync();
+            var result = _profileService.GetProfilesAsync();
 
             Assert.AreEqual(1, result.Count);
             Assert.AreEqual(true, result.First().CanLoad);
@@ -91,7 +92,8 @@ namespace VRCFaceTracking.Avalonia.Tests
                 .Setup(m => m.GetInstalledModules())
                 .Returns(new List<InstallableTrackingModule> { installedModule1, installedModule2, installedModule3 });
 
-            var result = await _profileService.InitializeAsync();
+            await _profileService.InitializeAsync();
+            var result = _profileService.GetProfilesAsync();
 
             Assert.AreEqual(2, result.Count);
             Assert.AreEqual(true, result.First().CanLoad);

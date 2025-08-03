@@ -63,10 +63,9 @@ public partial class ModuleRegistryViewModel : ViewModelBase
 
         Dispatcher.UIThread.Post(async () =>
         {
-            await _profileService.InitializeAsync();
-            Profiles = new ObservableCollection<Profile>(_profileService.GetProfiles());
-            SelectedProfile = Profiles.FirstOrDefault();
+            Profiles = new ObservableCollection<Profile>(await _profileService.GetProfilesAsync());
             OnPropertyChanged(nameof(Profiles));
+            SelectedProfile = await _profileService.GetActiveProfile();
         });
     }
 
@@ -389,10 +388,7 @@ public partial class ModuleRegistryViewModel : ViewModelBase
         if (RequestReinit)
         {
             RequestReinit = false;
-            var installedModules = InstalledModules.ToList();
-            _moduleDataService.SaveInstalledModulesDataAsync(installedModules);
-            _libManager.TeardownAllAndResetAsync();
-            _libManager.Initialize();
+            _profileService.ApplyProfile(SelectedProfile);
         }
     }
 
@@ -491,6 +487,8 @@ public partial class ModuleRegistryViewModel : ViewModelBase
         SelectedProfile = p;
 
         _profileService.SaveProfiles();
+
+        RequestReinit = true;
     }
 
     [RelayCommand]
@@ -500,6 +498,8 @@ public partial class ModuleRegistryViewModel : ViewModelBase
         _profileService.RemoveProfile(profile);
 
         _profileService.SaveProfiles();
+
+        RequestReinit = true;
     }
 
     [RelayCommand]
@@ -509,14 +509,17 @@ public partial class ModuleRegistryViewModel : ViewModelBase
 
         RecalculateAvaliableModules();
         _profileService.SaveProfiles();
+
+        RequestReinit = true;
     }
     [RelayCommand]
     public void RemoveModuleFromSelectedProfile(InstallableTrackingModule module)
     {
         SelectedProfile.Modules.Remove(module);
 
-
         RecalculateAvaliableModules();
         _profileService.SaveProfiles();
+
+        RequestReinit = true;
     }
 }

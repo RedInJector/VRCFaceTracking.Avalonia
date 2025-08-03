@@ -65,12 +65,12 @@
     </SplitView.Pane>
 
     <SplitView.Content>
-        <Grid>
-      <Border x:Name ="ViewContainer" CornerRadius="16 0 0 0" Padding="5" Background="{DynamicResource SystemChromeMediumColor}">
-          <TransitioningContentControl Content="{Binding CurrentPage}" />
-      </Border>
-          <controls:DropOverlay IsOverlayVisible="{Binding IsDropOverlayVisible}"/>
-        </Grid>
+      <Grid>
+        <Border x:Name ="ViewContainer" CornerRadius="16 0 0 0" Padding="5" Background="{DynamicResource SystemChromeMediumColor}">
+            <TransitioningContentControl Content="{Binding CurrentPage}" />
+        </Border>
+        <controls:DropOverlay IsOverlayVisible="{Binding IsDropOverlayVisible}"/>
+      </Grid>
     </SplitView.Content>
   </SplitView>
 </UserControl>

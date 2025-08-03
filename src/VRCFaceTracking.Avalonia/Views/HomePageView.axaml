@@ -10,259 +10,285 @@
     xmlns:assets="clr-namespace:VRCFaceTracking.Avalonia.Assets"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:models="clr-namespace:VRCFaceTracking;assembly=VRCFaceTracking.SDK"
+    xmlns:amodels="clr-namespace:VRCFaceTracking.Avalonia.Models"
     xmlns:controls="clr-namespace:VRCFaceTracking.Avalonia.Controls"
     xmlns:viewModels="clr-namespace:VRCFaceTracking.Avalonia.ViewModels.SplitViewPane"
     xmlns:views="clr-namespace:VRCFaceTracking.Avalonia.Views"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <UserControl.Resources>
-        <helpers:StreamToBitmapConverter x:Key="ImageConverter" />
-    </UserControl.Resources>
+  <UserControl.Resources>
+    <helpers:StreamToBitmapConverter x:Key="ImageConverter" />
+  </UserControl.Resources>
 
-    <ScrollViewer>
-        <StackPanel Classes="Page">
-            <TextBlock
-                Classes="Header"
-                Text="{x:Static assets:Resources.Shell_Main_Content}" />
+  <ScrollViewer>
+    <StackPanel Classes="Page">
+      <TextBlock
+          Classes="Header"
+          Text="{x:Static assets:Resources.Shell_Main_Content}" />
 
-            <ItemsControl ItemsSource="{Binding LibManager.LoadedModulesMetadata}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="models:ModuleMetadata">
-                        <Border>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <ItemsControl Grid.Column="0" ItemsSource="{Binding StaticImages, Converter={StaticResource ImageConverter}}">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <StackPanel Orientation="Horizontal" />
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Margin="0,12,0,0">
-                                                <Image
-                                                    Height="150"
-                                                    HorizontalAlignment="Stretch"
-                                                    Margin="0,0,8,0"
-                                                    Source="{Binding}"
-                                                    Stretch="UniformToFill"
-                                                    VerticalAlignment="Top" />
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                              <StackPanel
-                                    Margin="28,0,0,0"
-                                    Grid.Column="1"
-                                    Orientation="Vertical"
-                                    Spacing="6"
-                                    VerticalAlignment="Center">
-                                    <TextBlock
-                                        FontSize="30"
-                                        FontWeight="Bold"
-                                        Text="{Binding Name, Mode=OneWay}" />
-                                  <TextBlock
-                                      IsVisible="{Binding UsingEye, Mode=OneWay}"
-                                      Text="{x:Static assets:Resources.EyeTrackingActive_Text}"
-                                      x:Name="EyeTrackingActive" />
-                                  <TextBlock
-                                      IsVisible="{Binding UsingExpression, Mode=OneWay}"
-                                      Text="{x:Static assets:Resources.FaceTrackingActive_Text}"
-                                      x:Name="FaceTrackingActive" />
-                                </StackPanel>
-                                <StackPanel
-                                    Grid.Column="3"
-                                    Orientation="Horizontal"
-                                    VerticalAlignment="Center">
-                                    <ToggleButton
-                                        Content="Toggle Tracking"
-                                        IsEnabled="{Binding Active, Mode=TwoWay}"
-                                        Padding="15"
-                                        x:Name="ToggleTracking" />
-                                </StackPanel>
-                            </Grid>
-                        </Border>
+
+      <Grid ColumnDefinitions="Auto, Auto">
+        <TextBlock
+          VerticalAlignment="Center"
+          Text="Active profile:"/>
+        <ComboBox
+          VerticalAlignment="Center"
+          Grid.Column="1"
+          IsEnabled="{Binding LoadedModulesMetadata, Converter={x:Static ObjectConverters.IsNotNull}}"
+          ItemsSource="{Binding Profiles}"
+          SelectedItem="{Binding SelectedProfile, Mode=TwoWay}">
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="amodels:Profile">
+              <TextBlock Text="{Binding Name}" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+      </Grid>
+
+      <ItemsControl
+          IsVisible="{Binding LoadedModulesMetadata, Converter={x:Static ObjectConverters.IsNotNull}}"
+          ItemsSource="{Binding LoadedModulesMetadata}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="models:ModuleMetadata">
+            <Border>
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ItemsControl Grid.Column="0" ItemsSource="{Binding StaticImages, Converter={StaticResource ImageConverter}}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Margin="0,12,0,0">
+                        <Image
+                            Height="150"
+                            HorizontalAlignment="Stretch"
+                            Margin="0,0,8,0"
+                            Source="{Binding}"
+                            Stretch="UniformToFill"
+                            VerticalAlignment="Top" />
+                      </Border>
                     </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <StackPanel
+                      Margin="28,0,0,0"
+                      Grid.Column="1"
+                      Orientation="Vertical"
+                      Spacing="6"
+                      VerticalAlignment="Center">
+                  <TextBlock
+                      FontSize="30"
+                      FontWeight="Bold"
+                      Text="{Binding Name, Mode=OneWay}" />
+                  <TextBlock
+                      IsVisible="{Binding UsingEye, Mode=OneWay}"
+                      Text="{x:Static assets:Resources.EyeTrackingActive_Text}"
+                      x:Name="EyeTrackingActive" />
+                  <TextBlock
+                      IsVisible="{Binding UsingExpression, Mode=OneWay}"
+                      Text="{x:Static assets:Resources.FaceTrackingActive_Text}"
+                      x:Name="FaceTrackingActive" />
+                </StackPanel>
+                <StackPanel
+                    Grid.Column="3"
+                    Orientation="Horizontal"
+                    VerticalAlignment="Center">
+                  <ToggleButton
+                      Content="Toggle Tracking"
+                      IsEnabled="{Binding Active, Mode=TwoWay}"
+                      Padding="15"
+                      x:Name="ToggleTracking" />
+                </StackPanel>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
 
-            <controls:ContentExample IsVisible="{Binding NoModulesInstalled}"
-                                     Padding="0,15,15,15">
-                <controls:WarningBlock
-                    Caption="{x:Static assets:Resources.no_modules_installed_warning_ButtonText}"
-                    DismissCommand="{Binding DismissWarningCommand}"
-                    Header="{x:Static assets:Resources.no_modules_installed_warning_Title}"
-                    NavigateCommand="{Binding NavigateToModulesCommand}"
-                    Subheader="{x:Static assets:Resources.no_modules_installed_warning_Description}" />
-            </controls:ContentExample>
+      <TextBlock
+          IsVisible="{Binding LoadedModulesMetadata, Converter={x:Static ObjectConverters.IsNull}}"
+          Text="Loading"/>
 
-            <controls:ContentExample Padding="0,15,15,15">
-                <Grid VerticalAlignment="Center">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <PathIcon Data="{StaticResource WirelessRegular}"
-                              Width="32"
-                              Margin="30,30,30,30"
-                              Grid.Column="0"/>
-                    <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center" Orientation="Vertical">
-                        <TextBlock
-                            FontSize="16"
-                            FontWeight="SemiBold"
-                            x:Name="OscStatus">
-                            OSC Status
-                        </TextBlock>
-                        <StackPanel Orientation="Horizontal" Spacing="5">
-                            <TextBlock Text="{x:Static assets:Resources.Listening_on_Port_Text}" x:Name="ListeningOnPort"
-                                        FontSize="14"
-                                        Foreground="{DynamicResource SystemChromeGrayColor}"/>
-                            <TextBlock Text="{Binding OscTarget.InPort, Mode=OneWay}"
-                                        FontSize="14"
-                                        Foreground="{DynamicResource SystemChromeGrayColor}"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Spacing="5">
-                            <TextBlock Text="{x:Static assets:Resources.Sending_on_Port_Text}" x:Name="SendingOnPort"
-                                        FontSize="14"
-                                        Foreground="{DynamicResource SystemChromeGrayColor}"/>
-                            <TextBlock Text="{Binding OscTarget.OutPort, Mode=OneWay}"
-                                        FontSize="14"
-                                        Foreground="{DynamicResource SystemChromeGrayColor}"/>
-                        </StackPanel>
-                    </StackPanel>
+      <controls:ContentExample IsVisible="{Binding NoModulesInstalled}"
+                               Padding="0,15,15,15">
+        <controls:WarningBlock
+            Caption="{x:Static assets:Resources.no_modules_installed_warning_ButtonText}"
+            DismissCommand="{Binding DismissWarningCommand}"
+            Header="{x:Static assets:Resources.no_modules_installed_warning_Title}"
+            NavigateCommand="{Binding NavigateToModulesCommand}"
+            Subheader="{x:Static assets:Resources.no_modules_installed_warning_Description}" />
+      </controls:ContentExample>
 
-                    <StackPanel
-                        Grid.Column="3"
-                        Orientation="Vertical"
-                        Spacing="6"
-                        VerticalAlignment="Center">
-                        <StackPanel
-                            HorizontalAlignment="Right"
-                            Orientation="Horizontal"
-                            Spacing="3">
-                            <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center">
-                                <Run Text="{Binding MessagesInPerSecCount, Mode=OneWay}" />
-                                <Run Text="{x:Static assets:Resources.msIncoming_Text}" />
-                            </TextBlock>
-                            <TextBlock
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Center"
-                                x:Name="MsIncoming" />
-                        </StackPanel>
-                        <StackPanel
-                            HorizontalAlignment="Right"
-                            Orientation="Horizontal"
-                            Spacing="3">
-                            <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center">
-                                <Run Text="{Binding MessagesOutPerSecCount, Mode=OneWay}" />
-                                <Run Text="{x:Static assets:Resources.msOutgoing_Text}" />
-                            </TextBlock>
-                            <TextBlock
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Center"
-                                x:Name="MsOutgoing" />
-                        </StackPanel>
-                    </StackPanel>
-                </Grid>
-            </controls:ContentExample>
+      <controls:ContentExample Padding="0,15,15,15">
+        <Grid VerticalAlignment="Center">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <PathIcon Data="{StaticResource WirelessRegular}"
+                    Width="32"
+                    Margin="30,30,30,30"
+                    Grid.Column="0"/>
+          <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center" Orientation="Vertical">
+            <TextBlock
+                FontSize="16"
+                FontWeight="SemiBold"
+                x:Name="OscStatus">
+              OSC Status
+            </TextBlock>
+            <StackPanel Orientation="Horizontal" Spacing="5">
+              <TextBlock Text="{x:Static assets:Resources.Listening_on_Port_Text}" x:Name="ListeningOnPort"
+                          FontSize="14"
+                          Foreground="{DynamicResource SystemChromeGrayColor}"/>
+              <TextBlock Text="{Binding OscTarget.InPort, Mode=OneWay}"
+                          FontSize="14"
+                          Foreground="{DynamicResource SystemChromeGrayColor}"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="5">
+              <TextBlock Text="{x:Static assets:Resources.Sending_on_Port_Text}" x:Name="SendingOnPort"
+                          FontSize="14"
+                          Foreground="{DynamicResource SystemChromeGrayColor}"/>
+              <TextBlock Text="{Binding OscTarget.OutPort, Mode=OneWay}"
+                          FontSize="14"
+                          Foreground="{DynamicResource SystemChromeGrayColor}"/>
+            </StackPanel>
+          </StackPanel>
 
-            <controls:ContentExample>
-                <Grid VerticalAlignment="Center">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                  <PathIcon Data="{StaticResource PersonRegular}"
-                            Width="32"
-                            Margin="15,30,30,30"
-                            Grid.Column="0"/>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <StackPanel Orientation="Vertical" Spacing="6" VerticalAlignment="Center">
-                            <TextBlock
-                                FontSize="16"
-                                FontWeight="SemiBold"
-                                Text="{x:Static assets:Resources.AvatarStatus_Text}"
-                                x:Name="AvatarStatus" />
-                            <TextBlock Text="{Binding ParameterOutputService.AvatarInfo.Name}" x:Name="AvatarName"
-                                       FontSize="14"
-                                       Foreground="{DynamicResource SystemChromeGrayColor}"/>
-                            <TextBlock Text="{Binding ParameterOutputService.AvatarInfo.Id}" x:Name="AvatarId"
-                                       FontSize="14"
-                                       Foreground="{DynamicResource SystemChromeGrayColor}"/>
-                            <StackPanel
-                                IsVisible="{Binding IsTestAvatar}"
-                                Orientation="Horizontal"
-                                VerticalAlignment="Center"
-                                x:Name="LocalTestWarning">
-                                <TextBlock
-                                    Text="{x:Static assets:Resources.LocalTestAvatar_Text}"
-                                    VerticalAlignment="Center"
-                                    x:Name="LocalTestAvatar" />
-                                <Ellipse
-                                    Fill="Red"
-                                    Height="10"
-                                    Margin="5,0,0,0"
-                                    VerticalAlignment="Center"
-                                    Width="10" />
-                            </StackPanel>
-                        </StackPanel>
-                    </StackPanel>
+          <StackPanel
+              Grid.Column="3"
+              Orientation="Vertical"
+              Spacing="6"
+              VerticalAlignment="Center">
+            <StackPanel
+                HorizontalAlignment="Right"
+                Orientation="Horizontal"
+                Spacing="3">
+              <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Run Text="{Binding MessagesInPerSecCount, Mode=OneWay}" />
+                <Run Text="{x:Static assets:Resources.msIncoming_Text}" />
+              </TextBlock>
+              <TextBlock
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Center"
+                  x:Name="MsIncoming" />
+            </StackPanel>
+            <StackPanel
+                HorizontalAlignment="Right"
+                Orientation="Horizontal"
+                Spacing="3">
+              <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Run Text="{Binding MessagesOutPerSecCount, Mode=OneWay}" />
+                <Run Text="{x:Static assets:Resources.msOutgoing_Text}" />
+              </TextBlock>
+              <TextBlock
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Center"
+                  x:Name="MsOutgoing" />
+            </StackPanel>
+          </StackPanel>
+        </Grid>
+      </controls:ContentExample>
 
-                    <StackPanel
-                        Grid.Column="3"
-                        Orientation="Vertical"
-                        VerticalAlignment="Center">
-                        <StackPanel
-                            HorizontalAlignment="Right"
-                            Orientation="Horizontal"
-                            Spacing="3">
-                            <TextBlock
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Center"
-                                x:Name="CurrentParametersCount">
-                                <Run Text="{Binding CurrentParametersCount}" />
-                                <Run>Parameters</Run>
-                            </TextBlock>
-                        </StackPanel>
-                        <StackPanel
-                            IsVisible="{Binding IsLegacyAvatar}"
-                            Margin="0,5,0,0"
-                            Orientation="Horizontal"
-                            VerticalAlignment="Center"
-                            x:Name="LegacyParamsWarning">
-                            <Ellipse
-                                Fill="Orange"
-                                Height="10"
-                                Margin="0,0,5,0"
-                                VerticalAlignment="Center"
-                                Width="10" />
-                            <StackPanel
-                                HorizontalAlignment="Right"
-                                Orientation="Horizontal"
-                                Spacing="3"
-                                VerticalAlignment="Center">
-                                <TextBlock
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    x:Name="LegacyParametersCount">
-                                    <Run Text="{Binding LegacyParametersCount}" />
-                                    <Run Text="{x:Static assets:Resources.LegacyParameters_Text}" />
-                                </TextBlock>
-                            </StackPanel>
-                        </StackPanel>
-                    </StackPanel>
-                </Grid>
-            </controls:ContentExample>
+      <controls:ContentExample>
+        <Grid VerticalAlignment="Center">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <PathIcon Data="{StaticResource PersonRegular}"
+                    Width="32"
+                    Margin="15,30,30,30"
+                    Grid.Column="0"/>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+            <StackPanel Orientation="Vertical" Spacing="6" VerticalAlignment="Center">
+              <TextBlock
+                  FontSize="16"
+                  FontWeight="SemiBold"
+                  Text="{x:Static assets:Resources.AvatarStatus_Text}"
+                  x:Name="AvatarStatus" />
+              <TextBlock Text="{Binding ParameterOutputService.AvatarInfo.Name}" x:Name="AvatarName"
+                         FontSize="14"
+                         Foreground="{DynamicResource SystemChromeGrayColor}"/>
+              <TextBlock Text="{Binding ParameterOutputService.AvatarInfo.Id}" x:Name="AvatarId"
+                         FontSize="14"
+                         Foreground="{DynamicResource SystemChromeGrayColor}"/>
+              <StackPanel
+                  IsVisible="{Binding IsTestAvatar}"
+                  Orientation="Horizontal"
+                  VerticalAlignment="Center"
+                  x:Name="LocalTestWarning">
+                <TextBlock
+                    Text="{x:Static assets:Resources.LocalTestAvatar_Text}"
+                    VerticalAlignment="Center"
+                    x:Name="LocalTestAvatar" />
+                <Ellipse
+                    Fill="Red"
+                    Height="10"
+                    Margin="5,0,0,0"
+                    VerticalAlignment="Center"
+                    Width="10" />
+              </StackPanel>
+            </StackPanel>
+          </StackPanel>
 
-        </StackPanel>
-    </ScrollViewer>
+          <StackPanel
+              Grid.Column="3"
+              Orientation="Vertical"
+              VerticalAlignment="Center">
+            <StackPanel
+                HorizontalAlignment="Right"
+                Orientation="Horizontal"
+                Spacing="3">
+              <TextBlock
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Center"
+                  x:Name="CurrentParametersCount">
+                <Run Text="{Binding CurrentParametersCount}" />
+                <Run>Parameters</Run>
+              </TextBlock>
+            </StackPanel>
+            <StackPanel
+                IsVisible="{Binding IsLegacyAvatar}"
+                Margin="0,5,0,0"
+                Orientation="Horizontal"
+                VerticalAlignment="Center"
+                x:Name="LegacyParamsWarning">
+              <Ellipse
+                  Fill="Orange"
+                  Height="10"
+                  Margin="0,0,5,0"
+                  VerticalAlignment="Center"
+                  Width="10" />
+              <StackPanel
+                  HorizontalAlignment="Right"
+                  Orientation="Horizontal"
+                  Spacing="3"
+                  VerticalAlignment="Center">
+                <TextBlock
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    x:Name="LegacyParametersCount">
+                  <Run Text="{Binding LegacyParametersCount}" />
+                  <Run Text="{x:Static assets:Resources.LegacyParameters_Text}" />
+                </TextBlock>
+              </StackPanel>
+            </StackPanel>
+          </StackPanel>
+        </Grid>
+      </controls:ContentExample>
+
+    </StackPanel>
+  </ScrollViewer>
 </UserControl>

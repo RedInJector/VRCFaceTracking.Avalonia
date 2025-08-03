@@ -9,13 +9,13 @@ namespace VRCFaceTracking.Avalonia.Models
     public class SavedProfile
     {
         public string Name { get; set; }
-        public List<Guid> modules { get; set; } = new();
+        public List<string> modules { get; set; } = new();
         public SavedProfile() { }
         public SavedProfile(Profile profile)
         {
             Name = profile.Name;
             foreach (var module in profile.Modules) {
-                 modules.Add(module.ModuleId);
+                 modules.Add(module.DllFileName);
             }
         }
     }

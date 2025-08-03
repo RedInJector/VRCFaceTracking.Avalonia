@@ -90,32 +90,42 @@
                 Margin="-6,0,6,12"
                 VerticalAlignment="Stretch">
               <!--  Left-hand content  -->
-              <Grid Grid.Column="0" VerticalAlignment="Stretch" HorizontalAlignment="Left">
-                <TabControl HorizontalAlignment="Center"
-                            x:Name="TabControl"
-                            SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"
-                             >
+              <Grid
+                  Grid.Column="0"
+                  VerticalAlignment="Stretch"
+                  HorizontalAlignment="Left">
+                <TabControl
+                    HorizontalAlignment="Center"
+                    x:Name="TabControl"
+                    SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
                   <TabItem
+                      HorizontalAlignment="Stretch"
                       FontWeight="SemiBold"
                       Header="Registry"
                       x:Name="Registry">
                     <DockPanel IsVisible="{Binding ModulesDetected}" Margin="0,0,6,0">
-                      <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,12" Width="350" Spacing="4">
+                      <Grid ColumnDefinitions="*, 4, Auto" DockPanel.Dock="Top" Margin="0,12">
                         <TextBox
-                          Text="{Binding SearchText}"
-                          Watermark="Search modules..."
-                          x:Name="SearchBox" />
-                        <Button Width="32" Height="32" ToolTip.Tip="Clear" Click="ClearSearchBox_Click">
+                            Grid.Column="0"
+                            Text="{Binding SearchText}"
+                            Watermark="Search modules..."
+                            HorizontalAlignment="Stretch"
+                            x:Name="SearchBox" />
+                        <Button
+                            Grid.Column="2"
+                            Width="32"
+                            Height="32"
+                            ToolTip.Tip="Clear"
+                            Click="ClearSearchBox_Click">
                           <TextBlock Text="✕" FontSize="16" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                         </Button>
-                      </StackPanel>
+                      </Grid>
 
                       <ScrollViewer VerticalScrollBarVisibility="Auto" VerticalAlignment="Stretch">
                         <ListBox
                             ItemsSource="{Binding FilteredModuleInfos}"
                             SelectedItem="{Binding SelectedInfoModule, Mode=TwoWay}"
                             SelectionMode="AlwaysSelected"
-                            Width="350"
                             x:Name="ModuleList">
                           <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="models:InstallableTrackingModule">
@@ -148,7 +158,6 @@
                           ItemsSource="{Binding InstalledModules}"
                           SelectedItem="{Binding SelectedInstalledModule, Mode=TwoWay}"
                           VerticalAlignment="Stretch"
-                          Width="350"
                           ScrollViewer.VerticalScrollBarVisibility="Auto"
                           x:Name="LocalModuleList">
                         <ListBox.ItemTemplate>
@@ -227,15 +236,14 @@
                       HorizontalAlignment="Stretch"
                       Header="Profiles"
                       x:Name="Profiles">
-                    <DockPanel Margin="6,8,0,0" >
-                      <Grid DockPanel.Dock="Top" ColumnDefinitions="*, Auto" HorizontalAlignment="Stretch">
+                    <DockPanel Margin="0,0,6,0" >
+                      <Grid ColumnDefinitions="*, 4, Auto" DockPanel.Dock="Top" Margin="0,12">
                         <TextBox
-                              HorizontalAlignment="Stretch"
-                              VerticalAlignment="Center"
-                              Grid.Column="0"
-                              Watermark="Search profiles or create one..."/>
+                            HorizontalAlignment="Stretch"
+                            Grid.Column="0"
+                            Watermark="Search profiles or create one..."/>
                         <Button
-                            Grid.Column="1"
+                            Grid.Column="2"
                             Width="32"
                             Height="32"
                             VerticalAlignment="Center"
@@ -615,6 +623,7 @@
 
                 </ScrollViewer>
 
+                <!--  Right-hand content Third panel  -->
                 <ScrollViewer>
                   <DockPanel>
                     <TextBox

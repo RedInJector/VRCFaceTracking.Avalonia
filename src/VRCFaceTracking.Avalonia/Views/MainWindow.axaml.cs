@@ -17,6 +17,7 @@ public partial class MainWindow : Window
         DataContext = vm;
         InitializeComponent();
         AdjustTitleBarForPlatform();
+        this.AttachDevTools();
     }
 
     private void AdjustTitleBarForPlatform()
@@ -46,6 +47,7 @@ public partial class MainWindow : Window
             SystemDecorations = SystemDecorations.Full;
             ExtendClientAreaToDecorationsHint = false;
         }
+
     }
 
     public MainWindow() : this(new MainViewModel()) { }
